@@ -1,2 +1,2 @@
-/out/*
-/zig-cache/*
+.out/*
+.zig-cache/*
