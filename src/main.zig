@@ -24,9 +24,31 @@ pub fn wrap(current: u8, amount: i32) u8 {
     return @intCast(@mod(@as(i32, current) + amount, 100));
 }
 
-pub fn getRotationsPastZero(current: i32, amount: i32) usize {
-    const result = @abs(@divFloor((current + amount), 100));
-    return @intCast(result);
+pub fn getRotationsPastZero(current: u32, amount: i32) usize {
+    if (amount == 0) return 0;
+
+    const dist = @abs(amount);
+
+    // Every 100 steps is 1 guaranteed rotation
+    var rotations: usize = @divTrunc(dist, 100);
+
+    // Remaining partial rotation
+    const partial = dist % 100;
+    if (partial == 0) return rotations;
+
+    // RIGHT turn
+    if (amount > 0) {
+        if (current + partial >= 100) {
+            rotations += 1;
+        }
+    } else {
+        // LEFT turn
+        if (current < partial) {
+            rotations += 1;
+        }
+    }
+
+    return rotations;
 }
 
 pub fn main() !void {
@@ -66,15 +88,15 @@ pub fn main() !void {
         const side: Side = try Side.fromChar(line[0]);
         const amount = try std.fmt.parseInt(i32, line[1..], 10);
 
-        const currentAsI32: i32 = @intCast(current);
+        const currentAsU32: u32 = @intCast(current);
 
         switch (side) {
             .left => {
-                pwd_0_count += getRotationsPastZero(currentAsI32, -amount);
+                pwd_0_count += getRotationsPastZero(currentAsU32, -amount);
                 current = wrap(current, -amount);
             },
             .right => {
-                pwd_0_count += getRotationsPastZero(currentAsI32, amount);
+                pwd_0_count += getRotationsPastZero(currentAsU32, amount);
                 current = wrap(current, amount);
             },
         }
@@ -104,7 +126,7 @@ test "test wrap" {
 }
 
 test "count rotations" {
-    var current: i32 = 50;
+    var current: u32 = 50;
     try std.testing.expectEqual(10, getRotationsPastZero(current, 1000));
 
     current = 20;
