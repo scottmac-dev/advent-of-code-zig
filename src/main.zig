@@ -24,7 +24,7 @@ pub fn wrap(current: u8, amount: i32) u8 {
     return @intCast(@mod(@as(i32, current) + amount, 100));
 }
 
-pub fn getRotationsPastZero(current: u32, amount: i32) usize {
+pub fn getRotationsPastZero(current: u8, amount: i32) usize {
     if (amount == 0) return 0;
 
     const dist = @abs(amount);
@@ -34,20 +34,19 @@ pub fn getRotationsPastZero(current: u32, amount: i32) usize {
 
     // Remaining partial rotation
     const partial = dist % 100;
-    if (partial == 0) return rotations;
 
     // RIGHT turn
     if (amount > 0) {
-        if (current + partial >= 100) {
+        if (current + partial > 100) {
             rotations += 1;
         }
     } else {
-        // LEFT turn
-        if (current < partial) {
+        // LEFT turn, dont count sarting from 0
+        if (current < partial and current != 0) {
             rotations += 1;
         }
     }
-
+    //std.debug.print("current: {}, amount: {d}, rotations: {d}, end point {d}\n", .{ current, amount, rotations, wrap(current, amount) });
     return rotations;
 }
 
@@ -88,22 +87,20 @@ pub fn main() !void {
         const side: Side = try Side.fromChar(line[0]);
         const amount = try std.fmt.parseInt(i32, line[1..], 10);
 
-        const currentAsU32: u32 = @intCast(current);
-
         switch (side) {
             .left => {
-                pwd_0_count += getRotationsPastZero(currentAsU32, -amount);
+                pwd_0_count += getRotationsPastZero(current, -amount);
                 current = wrap(current, -amount);
             },
             .right => {
-                pwd_0_count += getRotationsPastZero(currentAsU32, amount);
+                pwd_0_count += getRotationsPastZero(current, amount);
                 current = wrap(current, amount);
             },
         }
 
-        //if (current == 0) pwd_0_count += 1;
+        if (current == 0) pwd_0_count += 1;
 
-        //if (line_num > 20) break;
+        //if (line_num > 100) break;
 
         //std.debug.print("side: {any}, amount: {d}, current: {d}\n", .{ side, amount, current });
     }
@@ -126,7 +123,7 @@ test "test wrap" {
 }
 
 test "count rotations" {
-    var current: u32 = 50;
+    var current: u8 = 50;
     try std.testing.expectEqual(10, getRotationsPastZero(current, 1000));
 
     current = 20;
