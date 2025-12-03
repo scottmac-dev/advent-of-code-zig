@@ -62,8 +62,8 @@ pub fn main() !void {
     const io = threaded.io();
 
     // DAY 1, PART 1
-    const file = try std.fs.openFileAbsolute("/home/mac/projects/zig/advent-of-code-zig/src/input-day1.txt", .{});
-    defer file.close();
+    const file = try std.Io.Dir.cwd().openFile(io, "src/input-day1.txt", .{});
+    defer file.close(io);
 
     // Very small buffer since we know lines are max 4 chars + newline
     var read_buffer: [8]u8 = undefined;
