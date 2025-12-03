@@ -6,13 +6,24 @@ pub fn isPattern(num: u64) bool {
     const num_str = std.fmt.bufPrint(&buf, "{}", .{num}) catch return false;
 
     const len = num_str.len;
-    if (len % 2 != 0) return false; // must repeat twice and therefore must be even
 
-    const pattern_len: usize = len / 2;
-    const pattern = num_str[0..pattern_len];
+    var pattern_len: usize = 1;
+    while (pattern_len <= len / 2) : (pattern_len += 1) {
+        if (len % pattern_len != 0) continue; // must repeat evenly
 
-    if (std.mem.eql(u8, pattern, num_str[pattern_len..])) {
-        return true;
+        const pattern = num_str[0..pattern_len];
+        var repeats: bool = true;
+
+        var idx: usize = pattern_len;
+        while (idx < len) : (idx += pattern_len) {
+            const next = num_str[idx .. idx + pattern_len];
+            if (!std.mem.eql(u8, pattern, next)) {
+                repeats = false;
+                break;
+            }
+        }
+
+        if (repeats) return true;
     }
     return false;
 }
