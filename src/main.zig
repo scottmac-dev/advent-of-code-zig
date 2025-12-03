@@ -24,6 +24,11 @@ pub fn wrap(current: u8, amount: i32) u8 {
     return @intCast(@mod(@as(i32, current) + amount, 100));
 }
 
+pub fn getRotationsPastZero(current: i32, amount: i32) usize {
+    const result = @abs(@divFloor((current + amount), 100));
+    return @intCast(result);
+}
+
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     defer _ = gpa.deinit();
@@ -61,12 +66,22 @@ pub fn main() !void {
         const side: Side = try Side.fromChar(line[0]);
         const amount = try std.fmt.parseInt(i32, line[1..], 10);
 
+        const currentAsI32: i32 = @intCast(current);
+
         switch (side) {
-            .left => current = wrap(current, -amount),
-            .right => current = wrap(current, amount),
+            .left => {
+                pwd_0_count += getRotationsPastZero(currentAsI32, -amount);
+                current = wrap(current, -amount);
+            },
+            .right => {
+                pwd_0_count += getRotationsPastZero(currentAsI32, amount);
+                current = wrap(current, amount);
+            },
         }
 
-        if (current == 0) pwd_0_count += 1;
+        //if (current == 0) pwd_0_count += 1;
+
+        //if (line_num > 20) break;
 
         //std.debug.print("side: {any}, amount: {d}, current: {d}\n", .{ side, amount, current });
     }
@@ -86,4 +101,46 @@ test "test wrap" {
     current = 99;
     current = wrap(current, -99);
     try std.testing.expectEqual(current, 0);
+}
+
+test "count rotations" {
+    var current: i32 = 50;
+    try std.testing.expectEqual(10, getRotationsPastZero(current, 1000));
+
+    current = 20;
+    try std.testing.expectEqual(1, getRotationsPastZero(current, -70));
+
+    // TEST CASE FROM SITE
+    var count: usize = 0;
+    current = 50;
+    count += getRotationsPastZero(current, -68);
+
+    current = 82;
+    count += getRotationsPastZero(current, -30);
+
+    current = 52;
+    count += getRotationsPastZero(current, 48);
+
+    current = 0;
+    count += getRotationsPastZero(current, -5);
+
+    current = 95;
+    count += getRotationsPastZero(current, 60);
+
+    current = 55;
+    count += getRotationsPastZero(current, -55);
+
+    current = 0;
+    count += getRotationsPastZero(current, -1);
+
+    current = 99;
+    count += getRotationsPastZero(current, -99);
+
+    current = 0;
+    count += getRotationsPastZero(current, 14);
+
+    current = 14;
+    count += getRotationsPastZero(current, -82);
+
+    try std.testing.expectEqual(6, count);
 }
