@@ -40,7 +40,7 @@ pub fn main() !void {
     const io = threaded.io();
 
     // DAY 2, PART 1
-    const file = try std.Io.Dir.cwd().openFile(io, "src/input-day2.txt", .{});
+    const file = try std.Io.Dir.cwd().openFile(io, "src/inputs/input-day2.txt", .{});
     defer file.close(io);
 
     var read_buffer: [1024]u8 = undefined;

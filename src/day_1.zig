@@ -62,7 +62,7 @@ pub fn main() !void {
     const io = threaded.io();
 
     // DAY 1, PART 1
-    const file = try std.Io.Dir.cwd().openFile(io, "src/input-day1.txt", .{});
+    const file = try std.Io.Dir.cwd().openFile(io, "src/inputs/input-day1.txt", .{});
     defer file.close(io);
 
     // Very small buffer since we know lines are max 4 chars + newline
