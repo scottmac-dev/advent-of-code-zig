@@ -47,49 +47,82 @@ pub fn main() !void {
         try grid.append(allocator, line_cpy);
     }
 
-    var accessible_rolls: usize = 0;
-    const grid_len: usize = grid.items.len - 1;
-    for (grid.items, 0..) |line, idx| {
-        std.debug.print("{d}: ", .{idx});
-        const line_len = line.len - 1;
-        for (line, 0..) |char, i| {
-            if (char != '@') {
-                std.debug.print("{c}", .{char});
-                continue;
+    // PART 2, loop part 1
+    var total_removed: usize = 0;
+    while (true) {
+        var next_grid = try std.ArrayList([]const u8).initCapacity(allocator, 135);
+        defer {
+            for (next_grid.items) |item| {
+                allocator.free(item);
             }
-
-            var count: usize = 0;
-            // Left
-            if (i > 0 and line[i - 1] == '@') count += 1;
-            // Right
-            if (i < line_len and line[i + 1] == '@') count += 1;
-
-            // Top row
-            if (idx > 0) {
-                const prev_line = grid.items[idx - 1];
-                if (i > 0 and prev_line[i - 1] == '@') count += 1;
-                if (prev_line[i] == '@') count += 1;
-                if (i < line_len and prev_line[i + 1] == '@') count += 1;
-            }
-
-            // Bottom row
-            if (idx < grid_len) {
-                const next_line = grid.items[idx + 1];
-                if (i > 0 and next_line[i - 1] == '@') count += 1;
-                if (next_line[i] == '@') count += 1;
-                if (i < line_len and next_line[i + 1] == '@') count += 1;
-            }
-
-            if (count < 4) {
-                accessible_rolls += 1;
-                std.debug.print("x", .{});
-            } else {
-                std.debug.print("@", .{});
-            }
+            next_grid.deinit(allocator);
         }
-        std.debug.print("\n", .{});
-    }
 
-    std.debug.print("Lines: {d}, grid lines: {d}, rolls: {d}\n", .{ line_count, grid.items.len, accessible_rolls });
+        var accessible_rolls: usize = 0;
+        const grid_len: usize = grid.items.len - 1;
+
+        for (grid.items, 0..) |line, idx| {
+            //std.debug.print("{d}: ", .{idx});
+            const line_len = line.len - 1;
+            var next_grid_line = try std.ArrayList(u8).initCapacity(allocator, line_len + 1);
+
+            for (line, 0..) |char, i| {
+                if (char != '@') {
+                    try next_grid_line.append(allocator, char);
+                    continue;
+                }
+
+                var count: usize = 0;
+                // Left
+                if (i > 0 and line[i - 1] == '@') count += 1;
+                // Right
+                if (i < line_len and line[i + 1] == '@') count += 1;
+
+                // Top row
+                if (idx > 0) {
+                    const prev_line = grid.items[idx - 1];
+                    if (i > 0 and prev_line[i - 1] == '@') count += 1;
+                    if (prev_line[i] == '@') count += 1;
+                    if (i < line_len and prev_line[i + 1] == '@') count += 1;
+                }
+
+                // Bottom row
+                if (idx < grid_len) {
+                    const next_line = grid.items[idx + 1];
+                    if (i > 0 and next_line[i - 1] == '@') count += 1;
+                    if (next_line[i] == '@') count += 1;
+                    if (i < line_len and next_line[i + 1] == '@') count += 1;
+                }
+
+                if (count < 4) {
+                    accessible_rolls += 1;
+                    try next_grid_line.append(allocator, 'x');
+                } else {
+                    try next_grid_line.append(allocator, '@');
+                }
+            }
+
+            try next_grid.append(allocator, try next_grid_line.toOwnedSlice(allocator));
+        }
+        std.debug.print("rolls: {d}\n", .{accessible_rolls});
+        if (accessible_rolls > 0) {
+            total_removed += accessible_rolls;
+            // free old list
+            for (grid.items) |item| {
+                allocator.free(item);
+            }
+
+            grid.clearAndFree(allocator);
+
+            // copy over new list
+            for (next_grid.items) |item| {
+                const next_copy = try allocator.dupe(u8, item);
+                try grid.append(allocator, next_copy);
+            }
+        } else {
+            break;
+        }
+    }
+    std.debug.print("total rolls: {d}\n", .{total_removed});
 }
 test "test" {}
