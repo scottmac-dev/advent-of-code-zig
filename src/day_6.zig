@@ -114,80 +114,84 @@ pub fn main() !void {
     // PART 2
     var sum2: u64 = 0;
 
-    // Row
+    // Process each column
     for (values.items[0], 0..) |value, idx| {
         const operator = operators.items[idx];
 
-        // get column
+        // Collect all values in column
         var col_values = try std.ArrayList(u32).initCapacity(allocator, val_lines);
         defer col_values.deinit(allocator);
 
         try col_values.append(allocator, value);
-
-        // get values from columns first instead of rows
-        for (values.items, 0..) |col, i| {
+        for (values.items, 0..) |row, i| {
             if (i == 0) continue;
-            try col_values.append(allocator, col[idx]);
+            try col_values.append(allocator, row[idx]);
         }
 
-        std.debug.print("col values...\n", .{});
-        for (col_values.items) |v| {
-            std.debug.print("{d} ", .{v});
-        }
-
-        std.debug.print("\n", .{});
-
-        // extract column values
-        var new_values = try std.ArrayList(u32).initCapacity(allocator, val_lines);
-        defer new_values.deinit(allocator);
-
+        std.debug.print("col: ", .{});
+        // Read each number top-to-bottom to build the new numbers
         var max_len: usize = 0;
         for (col_values.items) |val| {
             var buf: [32]u8 = undefined;
+            std.debug.print("{d} ", .{val});
             const val_str = try std.fmt.bufPrint(&buf, "{}", .{val});
             if (val_str.len > max_len) max_len = val_str.len;
         }
+        std.debug.print("\n", .{});
 
+        // Create new numbers by reading digits vertically
+        var new_values = try std.ArrayList(u32).initCapacity(allocator, max_len);
+        defer new_values.deinit(allocator);
+
+        // Initialize with zeros
         for (0..max_len) |_| {
             try new_values.append(allocator, 0);
         }
 
+        // For each original number in the column
         for (col_values.items) |val| {
             var buf: [32]u8 = undefined;
             const val_str = try std.fmt.bufPrint(&buf, "{}", .{val});
 
-            var i: usize = val_str.len;
-
-            for (val_str) |char| {
-                const prev = new_values.items[i - 1];
-                const new = (prev * 10) + try std.fmt.charToDigit(char, 10);
-                new_values.items[i - 1] = new;
-                i -= 1;
+            // addition, align left
+            if (std.mem.eql(u8, operator, "+")) {
+                for (val_str, 0..) |char, digit_pos| {
+                    const digit = try std.fmt.charToDigit(char, 10);
+                    new_values.items[digit_pos] = new_values.items[digit_pos] * 10 + digit;
+                }
             }
-        }
 
-        std.debug.print("new values...\n", .{});
-        for (new_values.items) |v| {
-            std.debug.print("{d} ", .{v});
-        }
-        std.debug.print("\n", .{});
-
-        var sub_sum: u64 = 0;
-        for (new_values.items, 0..) |val, i| {
-            if (i == 0) {
-                sub_sum = val;
-            } else {
-                if (std.mem.eql(u8, operator, "*")) {
-                    sub_sum *= val;
-                } else if (std.mem.eql(u8, operator, "+")) {
-                    sub_sum += val;
-                } else {
-                    return error.InvalidOperator;
+            // multiply align right
+            else if (std.mem.eql(u8, operator, "*")) {
+                for (val_str, 1..) |char, digit_pos| {
+                    const back = val_str.len;
+                    const pos = back - digit_pos;
+                    const digit = try std.fmt.charToDigit(char, 10);
+                    new_values.items[pos] = new_values.items[pos] * 10 + digit;
                 }
             }
         }
+
+        std.debug.print("new {s}: ", .{operator});
+
+        // compute new values
+        var sub_sum: u64 = new_values.items[0];
+        for (new_values.items, 0..) |val, i| {
+            std.debug.print("{d} ", .{val});
+            if (i == 0) continue;
+
+            if (std.mem.eql(u8, operator, "*")) {
+                sub_sum *= val;
+            } else if (std.mem.eql(u8, operator, "+")) {
+                sub_sum += val;
+            } else {
+                return error.InvalidOperator;
+            }
+        }
+
+        std.debug.print("\n", .{});
+
         sum2 += sub_sum;
     }
-
     std.debug.print("PT2 sum: {d}\n", .{sum2});
 }
